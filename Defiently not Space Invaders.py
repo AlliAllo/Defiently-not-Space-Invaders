@@ -11,15 +11,20 @@ shots = []
 npcs = []
 powerups = []
 
-clock = pygame.time.Clock()
-(width, height) = (900, 750)
+width, height = 980,600
 background = (0, 0, 0)
+
 
 PAUSED = False
 PAUSE = False
 Running = True
 
-Display = pygame.display.set_mode((width, height))
+resizeScreen = 0
+resizeSCREEN = False
+
+
+Display = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+
 pygame.display.set_caption('Definitely not Space Invaders')
 
 playerPNG = [pygame.image.load(os.path.join("jet1.png")), pygame.image.load(os.path.join("jet2.png")),
@@ -27,11 +32,14 @@ playerPNG = [pygame.image.load(os.path.join("jet1.png")), pygame.image.load(os.p
 
 explo = pygame.image.load(os.path.join("explo.png")).convert_alpha()
 
-shot1 = pygame.image.load(os.path.join("bullet.png")).convert_alpha()
-shotGraphicRes1 = [30, 30]
+shot1 = "bullet.png"
+
+shotGraphicRes1 = [50, 50]
+
 npcGraphicRes1 = [120, 120]  # SQUARE PNG
 
-FPS = 144
+FPS = 60
+timer = pygame.time.Clock()
 maxHeight = 300
 
 jetWidth = 128
@@ -198,21 +206,20 @@ def update():
 # Starter player and npc
 player = Player(width / 2, height - jetHeight * 1.5)
 npcs.append(NPC((random.randint(0, (width - 120))), (random.randint(0, maxHeight)), 2, 10, 10, 5, 2, npcGraphicRes1[0],
-                npcGraphicRes1[1], "square.png"))
+                npcGraphicRes1[1], "babyYoda.png"))
 
 
 def collision():
     for npc in npcs:
         global Running
-        print(player.x, player.y, npc.x, npc.y)
-        if Collision.collision(Display, player.x-jetWidth/2, player.y-jetHeight/2,npc.x, npc.y, jetWidth, jetHeight):
+        if Collision().collision(player.x, player.y,npc.x, npc.y, jetWidth, jetHeight):
             Running = False
             print("You died")
             #FIX COLLISION - SOMETHING IS VERY WUNG
 
     for shot in shots:
         for npc in npcs:
-            if Collision.collision(Display, shot.x, shot.y, npc.x, npc.y, npc.npcWidth - shotGraphicRes1[0],
+            if Collision().collision(shot.x, shot.y, npc.x, npc.y, npc.npcWidth - shotGraphicRes1[0],
                                    npc.npcHeight - shotGraphicRes1[1]):
                 chance = (random.randint(1, 100))
                 npcs[0].HP -= player.damage
@@ -226,7 +233,7 @@ def collision():
                     npcs.pop(npcs.index(npc))
                     npcs.append(
                         NPC((random.randint(0, (width - 120))), (random.randint(0, maxHeight)), 2, 100, 10, 5, 2,
-                            npcGraphicRes1[0], npcGraphicRes1[1], "square.png"))
+                            npcGraphicRes1[0], npcGraphicRes1[1], "babyYoda.png"))
                 shots.pop(shots.index(shot))
 
                 print("You hit")
@@ -241,10 +248,27 @@ while Running:
         if event.type == pygame.QUIT:
             Running = False
 
+    if event.type == pygame.VIDEORESIZE and width >= 1920:
+        width, height = 980, 600
+        Display = pygame.display.set_mode((width, height), RESIZABLE)
+        Display = Display
+        #HOW TO MAKE WINDOWED FULLSCREEN, AND MAKE SMALLER THE RIGHT WAY
+
+    if event.type == pygame.VIDEORESIZE:
+        del Display
+        width, height = 1920, 1080
+        newDisplay = pygame.display.set_mode((width, height), RESIZABLE)
+        Display = newDisplay
+
+
+
+
+
+
+
     if press[pygame.K_p] and not PAUSED:
         PAUSE = True
         PAUSE = not PAUSE
-        print(PAUSE)
 
     if press[pygame.K_ESCAPE]:
         Running = False
@@ -266,10 +290,9 @@ while Running:
             player.y += player.speed
 
         if press[pygame.K_SPACE]:
-            if len(shots) < 10:
+            if len(shots) < 1000:
                 shots.append(
-                    Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7,
-                               "bullet.png"))
+                    Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7, shot1))
 
         if press[pygame.K_r]:
             powerups.append(powerUps(random.randint(0, (width - 120)), (random.randint(0, 350)), 1, 1, 1, "square.png"))
@@ -279,6 +302,8 @@ while Running:
         update()
         collision()
         PAUSED = False
+        timer.tick(FPS)
+
 
 # MAKING SHOOTING ROCKETS/MISSLES
 
