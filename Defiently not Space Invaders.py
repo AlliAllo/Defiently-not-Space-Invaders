@@ -1,3 +1,4 @@
+
 import pygame
 import time
 from pygame.locals import *
@@ -10,6 +11,7 @@ AFK = 0
 shots = []
 npcs = []
 powerups = []
+npcShots = []
 
 width, height = 980,600
 background = (0, 0, 0)
@@ -113,12 +115,13 @@ class NPC():
 
 
 class Projectile():
-    def __init__(self, x, y, speed, graphicPath):
+    def __init__(self, x, y, speed, graphicPath,shootingRate):
         self.x = x
         self.y = y
         self.speed = speed
         self.graphicPath = graphicPath
         self.shotGraphic = pygame.image.load(os.path.join(graphicPath)).convert_alpha()
+        self.shootingRate = shootingRate
         self.exponential = self.speed ** 2 - self.speed * 5  # FIX THIS NUMBER
 
     def draw(self, screen):
@@ -129,6 +132,18 @@ class Projectile():
         else:
             shots.pop(shots.index(shots[0]))
         self.screen.blit(self.shotGraphic, (self.x, self.y))
+
+
+    def npcDraw(self,screen):
+        self.screen = screen
+        if not self.y > height + jetHeight:
+            self.y += self.exponential
+        else:
+            npcShots.pop(npcShots.index(npcShots[0]))
+
+        self.screen.blit(self.shotGraphic, (self.x, self.y))
+
+
 
 
 # I hope you know what this is...
@@ -197,6 +212,11 @@ def update():
     for shot in shots:
         shot.draw(Display)
 
+    for npcShot in npcShots:
+        npcShot.npcDraw(Display)
+
+
+
     for powerup in powerups:
         powerup.draw(Display)
 
@@ -219,8 +239,8 @@ def collision():
 
     for shot in shots:
         for npc in npcs:
-            if Collision().collision(shot.x, shot.y, npc.x, npc.y, npc.npcWidth - shotGraphicRes1[0],
-                                   npc.npcHeight - shotGraphicRes1[1]):
+            if Collision().collision(shot.x, shot.y, npc.x, npc.y, npc.npcWidth - shotGraphicRes1[0],npc.npcHeight - shotGraphicRes1[1]):
+
                 chance = (random.randint(1, 100))
                 npcs[0].HP -= player.damage
                 # CRIT CHANCE
@@ -251,7 +271,7 @@ while Running:
     if event.type == pygame.VIDEORESIZE and width >= 1920:
         width, height = 980, 600
         Display = pygame.display.set_mode((width, height), RESIZABLE)
-        Display = Display
+
         #HOW TO MAKE WINDOWED FULLSCREEN, AND MAKE SMALLER THE RIGHT WAY
 
     if event.type == pygame.VIDEORESIZE:
@@ -259,12 +279,6 @@ while Running:
         width, height = 1920, 1080
         newDisplay = pygame.display.set_mode((width, height), RESIZABLE)
         Display = newDisplay
-
-
-
-
-
-
 
     if press[pygame.K_p] and not PAUSED:
         PAUSE = True
@@ -290,15 +304,21 @@ while Running:
             player.y += player.speed
 
         if press[pygame.K_SPACE]:
-            if len(shots) < 1000:
-                shots.append(
-                    Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7, shot1))
+            if len(shots) < 1:
+                shots.append(Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7, shot1,0))
 
         if press[pygame.K_r]:
             powerups.append(powerUps(random.randint(0, (width - 120)), (random.randint(0, 350)), 1, 1, 1, "square.png"))
 
+        # NPC SHOOTING - HOW TO SET A TIMER BETWEEN EVERY SHOT
+        if len(npcShots) <= 10:
+            npcShots.append(Projectile(npcs[0].x + npcs[0].npcWidth / 2 - shotGraphicRes1[0] / 2, npcs[0].y + shotGraphicRes1[1], 7, shot1, 1))
+
+
+
         for npc in npcs:
             npc.npcMovement()
+
         update()
         collision()
         PAUSED = False
@@ -314,6 +334,8 @@ while Running:
 # RESTART BUTTON
 
 # HEALTH BAR FOR BOSS
+
+#Obstacles?
 
 # GAME ICON 
 
