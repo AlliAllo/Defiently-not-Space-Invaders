@@ -1,4 +1,3 @@
-
 import pygame
 import time
 from pygame.locals import *
@@ -6,6 +5,8 @@ from copy import deepcopy
 import os
 import random
 
+shootingRate = 0
+npcshootingRate = 0
 AFK = 0
 
 shots = []
@@ -13,7 +14,8 @@ npcs = []
 powerups = []
 npcShots = []
 
-width, height = 980,600
+width = 1200
+height = int(width * 9/16)
 background = (0, 0, 0)
 
 
@@ -33,19 +35,28 @@ playerPNG = [pygame.image.load(os.path.join("jet1.png")), pygame.image.load(os.p
              pygame.image.load(os.path.join("jet3.png"))]
 
 explo = pygame.image.load(os.path.join("explo.png")).convert_alpha()
+healthIcon = pygame.image.load(os.path.join("healthIcon.png")).convert_alpha()
 
 shot1 = "bullet.png"
 
-shotGraphicRes1 = [50, 50]
+npcshot1 = "npcBullet.png"
 
-npcGraphicRes1 = [120, 120]  # SQUARE PNG
+
+shotGraphicRes1 = [50, 50]
+powerupWidth,powerupHeight = 60,60
+
+npcGraphicRes1 = [180, 180]
+npcGraphicRes2 = [240, 240]
+npcGraphicRes2 = [240, 240]
 
 FPS = 60
 timer = pygame.time.Clock()
-maxHeight = 300
+maxHeight = int(height/3)
+SCORE = 0
+npcSpawn = 0
 
-jetWidth = 128
-jetHeight = 128
+jetWidth = 115
+jetHeight = 115
 
 
 # "stats" for the Player
@@ -53,12 +64,13 @@ class Player():
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.speed = 9
+        self.speed = 6
         self.damage = 2
         self.health = 100
         self.velocity = 25
         self.critical = 10
         self.maxCount = 0
+        self.shootingRate = 3
 
         self.critDMG = 2
 
@@ -73,7 +85,7 @@ class Player():
 
 # NPC stats
 class NPC():
-    def __init__(self, x, y, dmg, HP, vel, xspeed, yspeed, npcWidth, npcHeight, graphicPath):
+    def __init__(self, x, y, dmg, HP, vel,attackRate, xspeed, yspeed, npcWidth, npcHeight, graphicPath,number,spawnNew):
         self.x = x
         self.y = y
         self.speed = [xspeed, yspeed]
@@ -84,9 +96,17 @@ class NPC():
         self.dmg = dmg
         self.npcWidth = npcWidth
         self.npcHeight = npcHeight
+        self.attackRate = attackRate
+        self.number = number
+        self.speed2 = [xspeed * 2, yspeed*2]
+        self.speed3 = [xspeed * 0.8, yspeed*0.8]
+        self.speed4 = [xspeed * 0.4, yspeed*0.4]
+        self.speed5 = [xspeed * 3, yspeed * 3]
+        self.spawnNew = spawnNew
 
         self.right = True
         self.down = True
+        self.spawned = True
 
         self.npcGraphic = pygame.image.load(os.path.join(graphicPath)).convert_alpha()
 
@@ -95,6 +115,8 @@ class NPC():
 
     def npcMovement(self):
         # x posision
+        print(self.speed2)
+        print(self.speed3)
         if self.right:
             self.x += self.speed[0]
             if self.x > width - self.npcWidth:
@@ -106,16 +128,101 @@ class NPC():
         # y posision
         if self.down:
             self.y += self.speed[1]
-            if self.y > height / 2 - self.npcHeight:
+            if self.y > maxHeight - self.npcHeight:
                 self.down = False
         if not self.down:
             self.y -= self.speed[1]
             if self.y <= 0:
                 self.down = True
 
+    def npcMovement2(self):
+        # x posision
+        print("yo")
+        if self.right:
+            self.x += self.speed2[0]
+            if self.x > width - self.npcWidth:
+                self.right = False
+        if not self.right:
+            self.x -= self.speed2[0]
+            if self.x <= 0:
+                self.right = True
+        # y posision
+        if self.down:
+            self.y += self.speed2[1]
+            if self.y > maxHeight - self.npcHeight:
+                self.down = False
+        if not self.down:
+            self.y -= self.speed2[1]
+            if self.y <= 0:
+                self.down = True
+
+
+    def npcMovement3(self):
+        # x posision
+        if self.right:
+            self.x += self.speed3[0]
+            if self.x > width - self.npcWidth:
+                self.right = False
+        if not self.right:
+            self.x -= self.speed3[0]
+            if self.x <= 0:
+                self.right = True
+        # y posision
+        if self.down:
+            self.y += self.speed3[1]
+            if self.y > maxHeight - self.npcHeight:
+                self.down = False
+        if not self.down:
+            self.y -= self.speed3[1]
+            if self.y <= 0:
+                self.down = True
+
+    def npcMovement4(self):
+        # x posision
+        if self.right:
+            self.x += self.speed4[0]
+            if self.x > width - self.npcWidth:
+                self.right = False
+        if not self.right:
+            self.x -= self.speed4[0]
+            if self.x <= 0:
+                self.right = True
+        # y posision
+        if self.down:
+            self.y += self.speed4[1]
+            if self.y > maxHeight - self.npcHeight:
+                self.down = False
+        if not self.down:
+            self.y -= self.speed4[1]
+            if self.y <= 0:
+                self.down = True
+
+    def npcMovement5(self):
+        #COOL BOSS MOVEMENT
+        if not self.spawned or not bossrapidFire:
+            # x posision
+            if self.right:
+                self.x += self.speed5[0]
+                if self.x > width - self.npcWidth:
+                    self.right = False
+            if not self.right:
+                self.x -= self.speed5[0]
+                if self.x <= 0:
+                    self.right = True
+            # y posision
+            if self.down:
+                self.y += self.speed5[1]
+                if self.y > maxHeight - self.npcHeight:
+                    self.down = False
+            if not self.down:
+                self.y -= self.speed5[1]
+                if self.y <= 0:
+                    self.down = True
+
+
 
 class Projectile():
-    def __init__(self, x, y, speed, graphicPath,shootingRate):
+    def __init__(self, x, y, speed, graphicPath):
         self.x = x
         self.y = y
         self.speed = speed
@@ -127,9 +234,8 @@ class Projectile():
     def draw(self, screen):
         self.screen = screen
         # Delete bullet if it's out of screen, otherwise move it up.
-        if not self.y > height + jetHeight and not self.y < -200:
-            self.y -= self.exponential
-        else:
+        self.y -= self.exponential
+        if self.y < -200:
             shots.pop(shots.index(shots[0]))
         self.screen.blit(self.shotGraphic, (self.x, self.y))
 
@@ -148,9 +254,9 @@ class Projectile():
 
 # I hope you know what this is...
 class Collision:
-    def collision(self, x1, y1, x2, y2, sizeX, sizeY):
-        if x1 >= x2 and x1 <= x2 + sizeX:
-            if y1 >= y2 and y1 <= y2 + sizeY:
+    def collision(self, x1, y1, x2, y2, sizeX, sizeY,size2X,size2Y):
+        if x1 >= x2 and x1 <= x2 + size2X or x2 >= x1 and x2 <= x1 + sizeX:
+            if y1 >= y2 and y1 <= y2 + size2Y or y2 >= y1 and y2 <= y1 + sizeY:
                 return True
         return False
 
@@ -169,35 +275,33 @@ class Font():
         self.healthRect = self.healthText.get_rect()
         self.healthRect.center = (self.x, self.y)
 
-        # scoreboard
-        self.scoreFont = pygame.font.Font("pepega.ttf", self.size)
-        self.scoreText = self.scoreFont.render("SCORE:" + str(SCORE), True, self.color, background)
-        self.scoreRect = self.scoreText.get_rect()
-        self.scoreRect.center = (self.x, self.y)
+
+class healthBars:
+    def __init__(self):
+        self.x = 0
+        self.y = height - 200
+        self.color = color
 
 
 class powerUps:
-    def __init__(self, x, y, speed, hp, dmg, powerGraphic):
+    def __init__(self, x, y, speed, hp, dmg,attackRate, powerGraphic):
         self.x = x
         self.y = y
         self.speed = speed
         self.hp = hp
         self.dmg = dmg
         self.powerGraphic = powerGraphic
+        self.attackRate = attackRate
         self.powerPath = pygame.image.load(os.path.join(powerGraphic)).convert_alpha()
 
     def draw(self, screen):
         self.screen = screen
-
-        self.y += 5
-        if self.y > height + 300:
+        self.y += 4
+        if self.y > height + 200:
             powerups.pop(powerups.index(powerups[0]))
 
         self.screen.blit(self.powerPath, (self.x, self.y))
 
-    def powerUp(self):
-        # HOW TO MAKE PLAYER STRONGER
-        pass
 
 
 def update():
@@ -215,50 +319,101 @@ def update():
     for npcShot in npcShots:
         npcShot.npcDraw(Display)
 
-
-
     for powerup in powerups:
         powerup.draw(Display)
+
+
+
+    #Display.blit(healthIcon,(0, height-200))
 
     pygame.display.flip()
 
 
 # Starter player and npc
 player = Player(width / 2, height - jetHeight * 1.5)
-npcs.append(NPC((random.randint(0, (width - 120))), (random.randint(0, maxHeight)), 2, 10, 10, 5, 2, npcGraphicRes1[0],
-                npcGraphicRes1[1], "babyYoda.png"))
+npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight-npcGraphicRes1[1])), 3, 10, 10,1, 5, 1, npcGraphicRes1[0],
+                npcGraphicRes1[1], "alien1.png",0,True))
 
 
 def collision():
     for npc in npcs:
         global Running
-        if Collision().collision(player.x, player.y,npc.x, npc.y, jetWidth, jetHeight):
-            Running = False
+        if Collision().collision(player.x, player.y,npc.x, npc.y,jetWidth,jetHeight - 15, npc.npcWidth, npc.npcHeight):
             print("You died")
             #FIX COLLISION - SOMETHING IS VERY WUNG
 
     for shot in shots:
         for npc in npcs:
-            if Collision().collision(shot.x, shot.y, npc.x, npc.y, npc.npcWidth - shotGraphicRes1[0],npc.npcHeight - shotGraphicRes1[1]):
+            if Collision().collision(shot.x, shot.y, npc.x, npc.y,shotGraphicRes1[0],shotGraphicRes1[1], npc.npcWidth, npc.npcHeight):
 
                 chance = (random.randint(1, 100))
-                npcs[0].HP -= player.damage
+                npc.HP -= player.damage
                 # CRIT CHANCE
                 if chance <= player.critical:
                     # CRIT ANIMATION
                     npc.HP -= player.damage * player.critDMG
+                    print("you qwuit")
 
-                # Did player die?
-                if npcs[0].HP <= 0:
+                # Did npc die?
+                if npc.HP <= 0:
+                    # POWERUP CRATE SPAWNES
+                    chance = random.randint(1, 20)
+                    if 0 <= chance <= 5:
+                        #ATTACK BOOST
+                        powerups.append(powerUps(random.randint(0, width - 120), 0 , 0,0,1,0, "attack.png"))
+                    if 5 < chance <= 10:
+                        #HEALTH BOOST
+                        powerups.append(powerUps(random.randint(0, width - 120), 0, 0, 10, 0, 0, "health.png"))
+                    if 10 < chance <= 15:
+                        #ATTACKRATE BOOST
+                        powerups.append(powerUps(random.randint(0, width - 120), 0, 0, 0 ,0, 3, "attackSpeed.png"))
+                    if 15 < chance <= 20:
+                        #SPEED BOOST
+                        powerups.append(powerUps(random.randint(0, width - 120), 0, 1.2, 0 ,0,0, "speed.png"))
+
+                    #REMOVE NPC FROM SCREEN AND THEN SUMMON A NEW ONE
                     npcs.pop(npcs.index(npc))
-                    npcs.append(
-                        NPC((random.randint(0, (width - 120))), (random.randint(0, maxHeight)), 2, 100, 10, 5, 2,
-                            npcGraphicRes1[0], npcGraphicRes1[1], "babyYoda.png"))
-                shots.pop(shots.index(shot))
+                    if npc.number == 0 and npc.spawnNew:
+                        npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 6, 20, 10,1, 5, 1,npcGraphicRes1[0], npcGraphicRes1[1], "alien2.png",1,True))
+                    if npc.number == 1 and npc.spawnNew:
+                        npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 6, 50, 10,1, 5, 1,npcGraphicRes1[0], npcGraphicRes1[1], "alien4.png",2,True))
+                    if npc.number == 2 and npc.spawnNew:
+                        npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 6, 50, 10,1, 5, 1,npcGraphicRes2[0], npcGraphicRes2[1], "alien3.png",3,True))
+                    if npc.number == 3 and npc.spawnNew:
+                        npcs.append(NPC(width / 2 - npc.npcWidth, -npc.npcWidth * 2 , 6, 50, 10,1, 5, 1,npcGraphicRes2[0], npcGraphicRes2[1], "alien5.png",4,False))
 
-                print("You hit")
+               # BUG FIX FOR WHEN SHOT COLLIDES WITH TWO NPCS AT ONCE
+                try:
+                    shots.pop(shots.index(shot))
+                except:
+                    pass
 
-            # SHOULD COLLISION BE HERE OR IN OBJECTS? IF HERE SHOULD I REMOVE HP HERE THING
+
+    for npcshot in npcShots:
+        if Collision().collision(npcshot.x, npcshot.y, player.x, player.y, shotGraphicRes1[0],shotGraphicRes1[1],jetWidth,jetHeight - 15):
+            if len(npcs) >= 1:
+                player.health -= npcs[0].dmg
+                if player.health <= 0:
+                    print("You died")
+                    #MAKE A DEATH SCREEN WITH RETRY BUTTON
+                npcShots.pop(npcShots.index(npcshot))
+
+
+    for powerup in powerups:
+        if Collision().collision(powerup.x, powerup.y, player.x, player.y, powerupWidth,powerupHeight,jetWidth,jetHeight - 15):
+            #POWER PLAYER UP
+
+            player.speed += powerup.speed
+            player.health += powerup.hp
+            #MAKE SURE PLAYER DOESN'T EXCEED 100 HP
+            if player.health > 100:
+                player.health = 100
+            player.damage += powerup.dmg
+            player.shootingRate += powerup.attackRate
+            #REMOVE THE POWERUP AFTER COLLISION
+            powerups.pop(powerups.index(powerup))
+
+
 
 
 # Main Loop
@@ -268,16 +423,14 @@ while Running:
         if event.type == pygame.QUIT:
             Running = False
 
-    if event.type == pygame.VIDEORESIZE and width >= 1920:
-        width, height = 980, 600
-        Display = pygame.display.set_mode((width, height), RESIZABLE)
+
 
         #HOW TO MAKE WINDOWED FULLSCREEN, AND MAKE SMALLER THE RIGHT WAY
 
     if event.type == pygame.VIDEORESIZE:
-        del Display
-        width, height = 1920, 1080
-        newDisplay = pygame.display.set_mode((width, height), RESIZABLE)
+        width = 1200
+        height = int(width * 9/16)
+        newDisplay = pygame.display.set_mode((width, height), FULLSCREEN)
         Display = newDisplay
 
     if press[pygame.K_p] and not PAUSED:
@@ -287,43 +440,84 @@ while Running:
     if press[pygame.K_ESCAPE]:
         Running = False
 
-        # ADD PAUSE FUNCTION + SIMON THINGY
 
     if not PAUSE:
         # Movement and wall collisions
-        if (press[pygame.K_RIGHT] or press[pygame.K_d]) and not player.x > width - jetWidth:
+        if (press[pygame.K_RIGHT] or press[pygame.K_d]) and not player.x > width - jetWidth - player.speed + 10:
             player.x += player.speed
 
-        if (press[pygame.K_LEFT] or press[pygame.K_a]) and not player.x < 0:
+        if (press[pygame.K_LEFT] or press[pygame.K_a]) and not player.x < 0 + player.speed - 10:
             player.x -= player.speed
 
-        if (press[pygame.K_UP] or press[pygame.K_w]) and not player.y < 5:
+        if (press[pygame.K_UP] or press[pygame.K_w]) and not player.y < 0 + player.speed:
             player.y -= player.speed
 
-        if (press[pygame.K_DOWN] or press[pygame.K_s]) and not player.y > height - jetHeight - 10:
+        if (press[pygame.K_DOWN] or press[pygame.K_s]) and not player.y > height - jetHeight - player.speed:
             player.y += player.speed
 
-        if press[pygame.K_SPACE]:
-            if len(shots) < 1:
-                shots.append(Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7, shot1,0))
+        #LIMIT HOW OFTEN PLAYER CAN SHOOT
+        if event.type == pygame.KEYDOWN:
+            if shootingRate >= 50:
+                if press[pygame.K_SPACE]:
+                    shots.append(Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7, shot1))
+                    shootingRate = 0
 
-        if press[pygame.K_r]:
-            powerups.append(powerUps(random.randint(0, (width - 120)), (random.randint(0, 350)), 1, 1, 1, "square.png"))
+        if npcshootingRate >= 40:
+            if len(npcs) >= 1:
+                npcShots.append(Projectile(npcs[0].x + npcs[0].npcWidth / 2 - shotGraphicRes1[0] / 2, npcs[0].y + shotGraphicRes1[1], 7, npcshot1))
 
-        # NPC SHOOTING - HOW TO SET A TIMER BETWEEN EVERY SHOT
-        if len(npcShots) <= 10:
-            npcShots.append(Projectile(npcs[0].x + npcs[0].npcWidth / 2 - shotGraphicRes1[0] / 2, npcs[0].y + shotGraphicRes1[1], 7, shot1, 1))
-
-
+            npcshootingRate = 0
 
         for npc in npcs:
-            npc.npcMovement()
+            if npc.number == 0:
+                npc.npcMovement()
+            if npc.number == 1:
+                npc.npcMovement2()
+            if npc.number == 2:
+                npc.npcMovement3()
+            if npc.number == 3:
+                npc.npcMovement4()
+            if npc.number == 4:
+                bossrapidFire = True
+                npc.npcMovement5()
+
+
+
+        if len(npcs) == 0 and SCORE >= 100:
+            print("SPawn")
+
 
         update()
         collision()
-        PAUSED = False
+
+
+        if npcSpawn >= 20000:
+            chance = random.randint(1,100)
+            if chance <= 85:
+                npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 3, 10, 10, 1, 5, 1,
+                            npcGraphicRes1[0],npcGraphicRes1[1], "alien1.png", 0,False))
+            if chance >= 85:
+                npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 3, 10, 10, 1, 5, 1,
+                                npcGraphicRes1[0], npcGraphicRes1[1], "alien1.png", 0, True))
+            npcSpawn = 0
+
+
+
+        shootingRate += player.shootingRate
+        npcshootingRate += npc.attackRate
+
+
+        npcSpawn += 1
         timer.tick(FPS)
 
+
+#MAKE BOSS FIGHT MOVEMENT AND SHOOTING
+
+#SKAL MAN GENTAGE COLLISION CHECK FOR npc IN npcs.
+
+# IF YOU KILL NPC AND THEY SHOO
+
+#COLLIDIIING WITH TWO DIFFERENT NPC's AT ONCE
 
 # MAKING SHOOTING ROCKETS/MISSLES
 
@@ -333,12 +527,13 @@ while Running:
 
 # RESTART BUTTON
 
-# HEALTH BAR FOR BOSS
+#  BAR FOR BOSS
 
 #Obstacles?
 
-# GAME ICON 
+# GAME ICON
 
 #MAYBE MAKE STARS IN PYGAME, AS CIRCLES - IDEA
 
+# HOW TO DISGUANGE BETWEEN NPCS - OBJECTS
 
