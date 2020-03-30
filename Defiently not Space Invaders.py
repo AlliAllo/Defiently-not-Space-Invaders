@@ -40,7 +40,7 @@ healthIcon = pygame.image.load(os.path.join("healthIcon.png")).convert_alpha()
 shot1 = "bullet.png"
 
 npcshot1 = "npcBullet.png"
-
+npcshot1Res = [50,50]
 
 shotGraphicRes1 = [50, 50]
 powerupWidth,powerupHeight = 60,60
@@ -343,14 +343,15 @@ npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randin
 def collision():
     for npc in npcs:
         global Running
+        # COLLISION BETWEEN NPC AND PLAYER
         if Collision().collision(player.x, player.y,npc.x, npc.y,jetWidth,jetHeight - 15, npc.npcWidth, npc.npcHeight):
             print("You died")
             #FIX COLLISION - SOMETHING IS VERY WUNG
 
     for shot in shots:
         for npc in npcs:
+            #COLLISION BETWEEN NPC AND PLAYER SHOTS
             if Collision().collision(shot.x, shot.y, npc.x, npc.y,shotGraphicRes1[0],shotGraphicRes1[1], npc.npcWidth, npc.npcHeight):
-
                 chance = (random.randint(1, 100))
                 npc.HP -= player.damage
                 # CRIT CHANCE
@@ -394,8 +395,17 @@ def collision():
                 except:
                     pass
 
+    for npcshot in npcShots:
+        for shot in shots:
+            if Collision().collision(npcshot.x, npcshot.y, shot.x, shot.y, shotGraphicRes1[0], shotGraphicRes1[1],
+                                     npcshot1Res[1], npcshot1Res[1]):
+
+                npcShots.pop(npcShots.index(npcshot))
+                shots.pop(shots.index(shot))
+
 
     for npcshot in npcShots:
+        # COLLISION BETWEEN NPC SHOTS AND PLAYER
         if Collision().collision(npcshot.x, npcshot.y, player.x, player.y, shotGraphicRes1[0],shotGraphicRes1[1],jetWidth,jetHeight - 15):
             if len(npcs) >= 1:
                 for npc in npcs:
@@ -407,6 +417,7 @@ def collision():
 
 
     for powerup in powerups:
+        #COLLISION BETWEEN PLAYER AND POWERUP
         if Collision().collision(powerup.x, powerup.y, player.x, player.y, powerupWidth,powerupHeight,jetWidth,jetHeight - 15):
             #POWER PLAYER UP
 
@@ -419,6 +430,9 @@ def collision():
             player.shootingRate += powerup.attackRate
             #REMOVE THE POWERUP AFTER COLLISION
             powerups.pop(powerups.index(powerup))
+
+
+
 
 
 
