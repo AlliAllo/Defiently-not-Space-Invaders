@@ -18,7 +18,7 @@ width = 1200
 height = int(width * 9/16)
 background = (0, 0, 0)
 
-
+playerShooting = True
 PAUSED = False
 PAUSE = False
 Running = True
@@ -218,12 +218,15 @@ class NPC():
                 self.y -= self.speed5[1]
                 if self.y <= 0:
                     self.down = True
+        global playerShooting
         if self.spawned:
             self.y += 1
             self.bossTimer += 1
+            playerShooting = False
             if self.bossTimer >= npcGraphicRes3[1] / 2 + npcGraphicRes3[1]:
                 self.spawned = False
                 self.bossrapidFire = True
+                playerShooting = True
 
 
 class Projectile():
@@ -265,7 +268,7 @@ class Collision:
                 return True
         return False
 
-
+# Class for Font, Currently has no use
 class Font():
     def __init__(self, x, y, color, size):
         self.x = x
@@ -279,13 +282,6 @@ class Font():
         self.healthText = self.healthFont.render("HEALTH:" + str(self.player.health), True, self.color, background)
         self.healthRect = self.healthText.get_rect()
         self.healthRect.center = (self.x, self.y)
-
-
-class healthBars:
-    def __init__(self):
-        self.x = 0
-        self.y = height - 200
-        self.color = color
 
 
 class powerUps:
@@ -308,7 +304,7 @@ class powerUps:
         self.screen.blit(self.powerPath, (self.x, self.y))
 
 
-
+#Update all object visuals into the display
 def update():
     # Make NPC move, and come down from "space"
     Display.fill(background)
@@ -327,8 +323,6 @@ def update():
     for powerup in powerups:
         powerup.draw(Display)
 
-
-
     #Display.blit(healthIcon,(0, height-200))
 
     pygame.display.flip()
@@ -336,6 +330,7 @@ def update():
 
 # Starter player and npc
 player = Player(width / 2, height - jetHeight * 1.5)
+
 npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight-npcGraphicRes1[1])), 3, 10, 10,1, 5, 1, npcGraphicRes1[0],
                 npcGraphicRes1[1], "alien1.png",0,True))
 
@@ -360,10 +355,10 @@ def collision():
                     npc.HP -= player.damage * player.critDMG
                     print("you qwuit")
 
-                # Did npc die?
+                # Did npc die? Then randomly spawn a random powerup
                 if npc.HP <= 0:
                     # POWERUP CRATE SPAWNES
-                    chance = random.randint(1, 20)
+                    chance = random.randint(1, 100)
                     if 0 <= chance <= 5:
                         #ATTACK BOOST
                         powerups.append(powerUps(random.randint(0, width - 120), 0 , 0,0,1,0, "attack.png"))
@@ -394,7 +389,7 @@ def collision():
                     shots.pop(shots.index(shot))
                 except:
                     pass
-
+    #COLLISION BETWEEN PLAYER AND NPC SHOTS
     for npcshot in npcShots:
         for shot in shots:
             if Collision().collision(npcshot.x, npcshot.y, shot.x, shot.y, shotGraphicRes1[0], shotGraphicRes1[1],
@@ -403,7 +398,7 @@ def collision():
                 npcShots.pop(npcShots.index(npcshot))
                 shots.pop(shots.index(shot))
 
-
+    #COLLISION BETWEEN NPC SHOTS AND PLAYER
     for npcshot in npcShots:
         # COLLISION BETWEEN NPC SHOTS AND PLAYER
         if Collision().collision(npcshot.x, npcshot.y, player.x, player.y, shotGraphicRes1[0],shotGraphicRes1[1],jetWidth,jetHeight - 15):
@@ -415,7 +410,7 @@ def collision():
                     #MAKE A DEATH SCREEN WITH RETRY BUTTON
                 npcShots.pop(npcShots.index(npcshot))
 
-
+    # COLLISION BETWEEN PLAYER AND POWERUP
     for powerup in powerups:
         #COLLISION BETWEEN PLAYER AND POWERUP
         if Collision().collision(powerup.x, powerup.y, player.x, player.y, powerupWidth,powerupHeight,jetWidth,jetHeight - 15):
@@ -428,12 +423,9 @@ def collision():
                 player.health = 100
             player.damage += powerup.dmg
             player.shootingRate += powerup.attackRate
+
             #REMOVE THE POWERUP AFTER COLLISION
             powerups.pop(powerups.index(powerup))
-
-
-
-
 
 
 
@@ -478,7 +470,7 @@ while Running:
 
         #LIMIT HOW OFTEN PLAYER CAN SHOOT
         if shootingRate >= 50:
-            if press[pygame.K_SPACE]:
+            if press[pygame.K_SPACE] and playerShooting:
                 shots.append(Projectile(player.x + jetWidth / 2 - shotGraphicRes1[0] / 2, player.y - shotGraphicRes1[1] / 2, 7, shot1))
                 shootingRate = 0
 
@@ -549,8 +541,6 @@ while Running:
 
 # RESTART BUTTON
 
-# ADD MUSIC AND SOUND EFFECTS
-
 #  BAR FOR BOSS
 
 #Obstacles?
@@ -560,6 +550,3 @@ while Running:
 #MAYBE MAKE STARS IN PYGAME, AS CIRCLES - IDEA
 
 # HOW TO DISGUANGE BETWEEN NPCS - OBJECTS
-
-# SET CODE TOGETHER LAST THING
-
