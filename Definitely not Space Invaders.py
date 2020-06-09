@@ -26,6 +26,7 @@ dead = False
 paused = False
 pause = False
 shoot = False
+WIN = False
 
 resizeScreen = 0
 resizeSCREEN = False
@@ -40,6 +41,7 @@ playerPNG = [pygame.image.load(os.path.join("jet1.png")), pygame.image.load(os.p
 
 explo = pygame.image.load(os.path.join("explo.png")).convert_alpha()
 healthBar = pygame.image.load(os.path.join("healthBar.png")).convert_alpha()
+bossBar = pygame.image.load(os.path.join("bossBar.png")).convert_alpha()
 
 shot1 = "bullet.png"
 
@@ -47,7 +49,7 @@ shot1 = "bullet.png"
 npcshot1 = "npcBullet.png"
 npcshot2 = "redcircle.png"
 
-npcshot1Res = [50,50]
+npcGraphicRes2 = [25,25]
 
 shotGraphicRes1 = [50, 50]
 powerupWidth,powerupHeight = 60,60
@@ -65,8 +67,8 @@ bossCounter = 0
 shotTimer = 0
 bossTimer = 0
 
-jetWidth = 120
-jetHeight = 120
+jetWidth = 115
+jetHeight = 115
 
 pygame.init()
 
@@ -77,7 +79,7 @@ class Player():
         self.x = x
         self.y = y
         self.speed = 7
-        self.damage = 100  #NORMAL ER 3
+        self.damage = 5
         self.health = 100
         self.velocity = 25
         self.critical = 10
@@ -303,9 +305,13 @@ class powerUps:
 #Update all object visuals into the display
 
 def update():
+    Display.fill(background)
     if not dead:
         # Make NPC move, and come down from "space"
-        Display.fill(background)
+        if bossSpawned and not WIN:
+            # HEALTH BAR FOR THE BOSS
+            Display.blit(bossBar, (100, 0))
+            pygame.draw.rect(Display, (255, 0, 0), (102, 2, npcs[0].HP * 10 - 4, 56))
 
         player.draw(Display)
 
@@ -321,6 +327,16 @@ def update():
         for powerup in powerups:
             powerup.draw(Display)
 
+        if WIN:
+            winFont = pygame.font.Font("pepega.ttf", 40)
+            winText = winFont.render("You beat the game with a score of " + str(SCORE) + "!", True, (0, 0, 0),
+                                     (0, 255, 0))
+            winRect = winText.get_rect()
+            winRect.center = (width / 2 - 50, height / 2)
+            Display.blit(winText, winRect)
+
+
+        #BOTTOM SIDEBAR FOR STATS
         pygame.draw.rect(Display,(100,100,100),(0,height-100,width,height))
 
         #SCORE FONT
@@ -360,7 +376,7 @@ def update():
         pygame.draw.rect(Display,(255,0,0),(40,height-78,player.health*4,56))
         pygame.display.flip()
 
-    elif dead:
+    if dead:
         # DEATH MENU
         pygame.draw.rect(Display,(125,125,125),(1/4*width,1/4*height,(2/4)*width,(2/4)*height))
 
@@ -375,12 +391,12 @@ def update():
         retryRect = retryText.get_rect()
         retryRect.center = (width / 2, height / 2 + 60)
         Display.blit(retryText, retryRect)
-        print(pygame.mouse.get_pos())
         if pygame.mouse.get_pos()[0] >= 510 and pygame.mouse.get_pos()[0] <= 690 and pygame.mouse.get_pos()[1] >= 415 and pygame.mouse.get_pos()[1] <= 462:
             if pygame.mouse.get_pressed()[0]:
-                print("hoi")
+                print("hehe")
 
         pygame.display.flip()
+
 
 
 
@@ -434,7 +450,7 @@ def collision():
                     if npc.number == 0:
                         SCORE += 1
                         if npc.spawnNew:
-                            npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 4, 20, 7, 1.7, 9, 1.2,npcGraphicRes1[0], npcGraphicRes1[1], "alien2.png",1,True))
+                            npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 4, 20, 7, 1.7, 7, 1.5,npcGraphicRes1[0], npcGraphicRes1[1], "alien2.png",1,True))
                     if npc.number == 1:
                         SCORE += 3
                         if npc.spawnNew:
@@ -442,11 +458,13 @@ def collision():
                     if npc.number == 2:
                         SCORE += 10
                         if npc.spawnNew:
-                            npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 13, 100, 6.2,1.4, 5, 1,npcGraphicRes2[0], npcGraphicRes2[1], "alien3.png",3,True))
+                            npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 13, 75, 6.2,1.4, 5, 1,npcGraphicRes2[0], npcGraphicRes2[1], "alien3.png",3,True))
                     if npc.number == 3:
                         SCORE += 30
                     if npc.number == 4:
+                        global WIN
                         SCORE += 100
+                        WIN = True
 
                # BUG FIX FOR WHEN SHOT COLLIDES WITH TWO NPCS AT ONCE
                 try:
@@ -457,14 +475,21 @@ def collision():
     for npcshot in npcShots:
         for shot in shots:
             if Collision().collision(npcshot.x, npcshot.y, shot.x, shot.y, shotGraphicRes1[0], shotGraphicRes1[1],
-                                     npcshot1Res[1], npcshot1Res[1]):
+                                     shotGraphicRes1[0], shotGraphicRes1[1]):
                 npcShots.pop(npcShots.index(npcshot))
                 shots.pop(shots.index(shot))
 
     #COLLISION BETWEEN NPC SHOTS AND PLAYER
     for npcshot in npcShots:
         # COLLISION BETWEEN NPC SHOTS AND PLAYER
-        if Collision().collision(npcshot.x, npcshot.y, player.x, player.y, shotGraphicRes1[0],shotGraphicRes1[1],jetWidth,jetHeight - 15):
+        # SHOT1 IS THE RESOLUTION OF ALL SHOTS, PROBLEM IS THAT THE RED CIRCLES FROM THE BOSS HAVE A DIFFERENT RESOLUTION
+        shot1 = [50, 50]
+        if len(npcs) >= 1:
+            if bossSpawned and npcs[0].bossrapidFire:
+                # IF THE BOSS IS DOING HIS FIRE ANIMATION THE SHOTS SHOULD HAVE A RESOLUTION OF 25x25 PIXELS
+                shot1 = [25,25]
+
+        if Collision().collision(npcshot.x, npcshot.y, player.x, player.y, shot1[0],shot1[1],jetWidth,jetHeight - 15):
             if len(npcs) >= 1:
                 player.health -= npcs[0].dmg
             if player.health <= 0:
@@ -584,16 +609,16 @@ while Running:
                 npc.npcMovement5()
 
         #SPAWN BOSS IF ALL NPC's ARE DEAD AND WHEN TIMER IS SET
-        if bossCounter > 100 and not bossSpawned and len(npcs) == 0:
-            npcs.append(NPC(width / 2 - 64, -npcGraphicRes3[0] * 1.5, 10, 400, 8, 2.3, 7, 1, npcGraphicRes3[0], npcGraphicRes3[1], "alien5.png", 4, False))
+        if bossCounter > 2000 and not bossSpawned and len(npcs) == 0:
+            npcs.append(NPC(width / 2 - 64, -npcGraphicRes3[0] * 1.5, 10, 100, 8, 2, 6.5, 1.2, npcGraphicRes3[0], npcGraphicRes3[1], "alien5.png", 4, False))
             bossSpawned = True
 
-        if npcSpawn >= 300 and not bossCounter > 999:
+        if npcSpawn >= 400 and not bossCounter > 1999 and not WIN:
             chance = random.randint(1,100)
-            if chance <= 85:
+            if chance <= 90:
                 npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 3, 12, 6, 1, 6, 1,
                             npcGraphicRes1[0],npcGraphicRes1[1], "alien1.png", 0,False))
-            if chance >= 85:
+            if chance >= 90:
                 npcs.append(NPC((random.randint(0, (width - npcGraphicRes1[0]))), (random.randint(0, maxHeight - npcGraphicRes1[1])), 3, 12, 6, 1, 6, 1,
                                 npcGraphicRes1[0], npcGraphicRes1[1], "alien1.png", 0, True))
             npcSpawn = 0
@@ -610,6 +635,7 @@ while Running:
 
         update()
         collision()
+
 
 
 #NPCS SHOOTING AT THE EXACT SAME TIME BUG
